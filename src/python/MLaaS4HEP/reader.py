@@ -584,7 +584,8 @@ class RootDataReader(object):
         self.max_list = []
         self.jdimension = []
         self.dimension_list = []
-        self.cicciobello=[]
+        self.time_reading = []
+        self.time_reading_and_specs = []
         if specs:
             self.load_specs(specs)
         else:
@@ -597,12 +598,6 @@ class RootDataReader(object):
 
         # perform initialization
         time0 = time.time()
-        #selected_branches=["ak4jetBtag1", "ak4jetBtag2", "nJets", "nBJets", "ak8sumPt", "ak8ak4deltaR1min", "ak8ak4deltaR2min", "Apla", "Cent", "Spher", "t3t1","t3t2", "jetBtagSub0", "jetBtagSub1"]
-        #selected_branches=["Apla", "Cent", "Spher", "ak4bbDeltaR", "ak4bbEta", "ak4bbPhi", "ak4jetBtag1", "ak4jetBtag2",
-        #       "ak4jetE1", "ak4jetE2", "ak4jetMass1", "ak4jetMass2", "ak4jetPt1", "ak4jetPt2", "ak8LjetPt",
-        #       "ak8ak4deltaR1min", "ak8ak4deltaR2min", "ak8sumPt", "genEvtWeight", "jetBtagSub0",
-        #       "jetBtagSub1", "jetNBSub", "nBJets", "nJets", "tau1", "tau2", "tau3","t3t1","t3t2"]
-        #self.out_branches=selected_branches
         self.init()
         if self.verbose:
             print("{} init is complete in {} sec".format(self, time.time()-time0))
@@ -694,7 +689,6 @@ class RootDataReader(object):
             if self.out_branches:
                 self.gen = self.tree.iterate(\
                         branches=self.out_branches+self.identifier, \
-                        #branches=self.out_branches, \
                         entrysteps=nevts, keycache=self.cache)
             else:
                 self.gen = self.tree.iterate(\
@@ -706,13 +700,12 @@ class RootDataReader(object):
             if self.out_branches:
                 self.gen = self.tree.iterate(\
                         branches=self.out_branches+self.identifier, \
-                        #branches=self.out_branches, \
                         entrysteps=nevts, keycache=self.cache)
             else:
                 self.gen = self.tree.iterate(entrysteps=nevts, keycache=self.cache)
             self.branches = next(self.gen) # python 3.X and 2.X
+        self.time_reading.append(time.time()-start_time)
         end_time = time.time()
-        self.cicciobello.append(end_time-start_time)
         self.idx += nevts
         if self.verbose:
             performance(nevts, self.tree, self.branches, start_time, end_time)
@@ -781,9 +774,8 @@ class RootDataReader(object):
         tot = 0
         set_branches = True
         set_min_max = True
-        listone=[]
         for chunk in steps(tot_rows, self.chunk_size):
-            time_inizio=time.time()
+            time_beginning = time.time()
             if tot + self.chunk_size > self.nevts:
                 nevts = self.nevts - tot
                 tot = self.nevts
@@ -800,12 +792,13 @@ class RootDataReader(object):
                 dim = dim_jarr(self.fetch_data(key))
                 if dim > self.jdim.get(key, 0):
                     self.jdim[key] = dim
-            listone.append(time.time()-time_inizio)
+            self.time_reading_and_specs.append(time.time()-time_beginning)
             if self.nevts > 0 and tot >= self.nevts:
-                print(f"###total time elapsed for reading + specs computing: {sum(listone[:])}; number of chunks {len(listone)}")
-                print(f"###total time elapsed for reading: {sum(self.cicciobello[:])}; number of chunks {len(self.cicciobello)}\n")
-                print(f"###total time elapsed for reading + specs computing: {sum(listone[:-1])}; number of chunks {len(listone)-1}")
-                print(f"###total time elapsed for reading: {sum(self.cicciobello[:-1])}; number of chunks {len(self.cicciobello)-1}\n")
+                if self.verbose:
+                    print(f"###total time elapsed for reading + specs computing: {sum(self.time_reading_and_specs[:])}; number of chunks {len(self.time_reading_and_specs)}")
+                    print(f"###total time elapsed for reading: {sum(self.time_reading[:])}; number of chunks {len(self.time_reading)}\n")
+                    print(f"###total time elapsed for reading + specs computing: {sum(self.time_reading_and_specs[:-1])}; number of chunks {len(self.time_reading_and_specs)-1}")
+                    print(f"###total time elapsed for reading: {sum(self.time_reading[:-1])}; number of chunks {len(self.time_reading)-1}\n")
                 break
 
         # if we've been asked to read all or zero events we determine
@@ -912,6 +905,7 @@ class RootDataReader(object):
            This is the old function, slower than the new one. It is kept for completeness'''
         self.idx = self.idx + 1
         # build output matrix
+        time0 = time.time()
         shape = len(self.flat_keys())
         for key in sorted(self.jagged_keys()):
             shape += self.jdim[key]
@@ -932,17 +926,16 @@ class RootDataReader(object):
                 print("idx", self.idx, "read", nevts, "events")
 
         # read event info
-        #event = []
-        #for key in self.identifier:
-        #    fdata = self.fetch_data(key)
-        #    if len(fdata) <= self.chunk_idx:
-        #        raise Exception("For key='%s' unable to find data at pos=%s while got %s" \
-        #                % (key, self.chunk_idx, len(fdata)))
-        #    event.append(fdata[self.chunk_idx])
+        event = []
+        for key in self.identifier:
+            fdata = self.fetch_data(key)
+            if len(fdata) <= self.chunk_idx:
+                raise Exception("For key='%s' unable to find data at pos=%s while got %s" \
+                        % (key, self.chunk_idx, len(fdata)))
+            event.append(fdata[self.chunk_idx])
 
         # form DataFrame record
         rec = {}
-        #time_start=time.time()
         for key in self.branches.keys():
             try:
                 fdata = self.fetch_data(key)
@@ -955,16 +948,11 @@ class RootDataReader(object):
                 print("failed idx", self.chunk_idx)
                 print("len(fdata)", len(fdata))
                 raise
-        #self.time_list100k.append(time.time()-time_start)
-        #if len(self.time_list100k) % 100000 == 0:
-        #    print(f"\n\n#################### Time for importing 100k events: {sum(self.time_list100k)}")
-        #    self.time_list100k = []
+
         # advance chunk index since we read the record
         self.chunk_idx = self.chunk_idx + 1
-        #print(f"###self.chunk_idx: {self.chunk_idx};    self.flat_keys(): {self.fkeys}\n ###self.jagged_keys(): {self.jkeys}\n; ####rec: {rec}")
 
         idx = 0
-        #time_start=time.time()
         for idx, key in enumerate(sorted(self.flat_keys())):
             if sys.version.startswith('3.') and isinstance(key, str):
                 key = key.encode('ascii') # convert string to binary
@@ -983,7 +971,6 @@ class RootDataReader(object):
         else:
             pos = 0
 
-        #if self.chunk_idx == 1019:
         for key in sorted(self.jagged_keys()):
             # check if key in our record
             if key in rec.keys():
@@ -1004,25 +991,7 @@ class RootDataReader(object):
                 else:
                     mask[idx] = 1
             pos = idx + 1
-        #cicciobello=time.time()-time_start
-        #self.time_list500.append(cicciobello)
-        #self.time_list1m.append(cicciobello)
-        #if len(self.time_list1m) % 1000000 == 0:
-        #    print(f"\n\n#################### Time for importing 1M events: {sum(self.time_list1m)}")
-        #    self.time_list1m = []
-        #if len(self.time_list500) % 500000 == 0:
-        #    print(f"\n\n#################### Time for importing 500m events: {sum(self.time_list500)}")
-        #    self.time_list500 = []
-                #if self.chunk_idx == 1019:
-                    #minv = float(self.minv.get(key, 0))
-                    #maxv = float(self.maxv.get(key, 1))
-                #print(f"key: {key}; minv: {minv}; maxv: {maxv}; val: {val}; normalized: {(val-minv)/(maxv-minv)}")
-        #print(f"###self.chunk_idx: {self.chunk_idx};    ####rec: {rec}")
-        #print(f"###chunk_idx: {self.chunk_idx}; xdf: {xdf}")
-        #if self.chunk_idx == 1019:
-        #    print(f"###chunk_idx: {self.chunk_idx}; xdf: {xdf}")
 
-        #print(f"###chunk_idx: {self.chunk_idx}; xdf: {xdf}")
         if self.verbose > 1:
             print("# idx=%s event=%s shape=%s proc.time=%s" % (
                 self.idx, event, np.shape(xdf), (time.time()-time0)))
@@ -1099,7 +1068,6 @@ class RootDataReader(object):
             return self.nan
         minv = float(self.minv.get(key, 0))
         maxv = float(self.maxv.get(key, 1))
-        #print(f"key: {key}; minv: {minv}; maxv: {maxv}; val: {val}; normalized: {(val-minv)/(maxv-minv)}")
         if maxv == minv:
             return val
         return (val-minv)/(maxv-minv)
