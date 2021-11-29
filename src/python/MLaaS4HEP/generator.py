@@ -18,9 +18,10 @@ import random
 import numpy as np
 
 # MLaaS4HEP modules
-from MLaaS4HEP.reader import RootDataReader, JsonReader, CsvReader, AvroReader, ParquetReader
-from MLaaS4HEP.utils import file_type, timestamp
+from reader import RootDataReader, JsonReader, CsvReader, AvroReader, ParquetReader
+from utils import file_type, timestamp
 
+print('Qui siamo nel GENERATOR.PY')
 
 class MetaDataGenerator(object):
     """
@@ -179,6 +180,7 @@ class RootDataGenerator(object):
     """
     def __init__(self, fin, labels, params=None, specs=None):
         "Initialization function for Data Generator"
+        print('Qui si fornisce una interfaccia che serve a leggere i file .root, siamo dentro RootDataGenerator')
         time0 = time.time()
         if not params:
             params = {}
@@ -198,10 +200,11 @@ class RootDataGenerator(object):
         # convert input fin parameter into file list if necessary
         if isinstance(fin, str):
             self.files = [fin]
+            print('se fin è una stringa la converto a lista')
         elif isinstance(fin, list):
             self.files = fin
         else:
-            raise Exception("Unsupported data-type '%s' for fin parameter" % type(fin))
+            raise Exception("fin (nome file) non è n'è una lista ne una stringa, quindi: Unsupported data-type '%s' for fin parameter" % type(fin))
         if isinstance(labels, str):
             self.labels = labels
         elif isinstance(labels, list):
@@ -214,6 +217,7 @@ class RootDataGenerator(object):
         self.reader_counter = {} # reader counter keeps track of nevts read by readers
 
         if verbose:
+            print('Qui si fornisce il tempo in cui viene creato il Generator e i parametri contenuti nel file parameters.json')
             print(timestamp('DataGenerator: {}'.format(self)))
             print("model parameters: {}".format(json.dumps(params)))
 
@@ -225,6 +229,7 @@ class RootDataGenerator(object):
                 exclude_branches = exclude_branches.split(',')
             if verbose:
                 print("exclude branches", exclude_branches)
+                print('branches esclusi, sempre presenti nel parameters.json')
 
         self.start_idx = 0
         self.chunk_size = chunk_size
@@ -244,6 +249,7 @@ class RootDataGenerator(object):
         self.evts_toread = {}
 
         # loop over files and create individual readers for them, then put them in a global reader
+        print('si fa il loop nei file e si crea il loro reader')
         for fname in self.files:
             # if no specs is given try to read them from local area
             fbase = fname.split('/')[-1].replace('.root', '')
@@ -253,11 +259,13 @@ class RootDataGenerator(object):
                     if verbose:
                         print("loading specs {}".format(self.gname))
                     specs = json.load(open(self.gname))
-
+            print('qui agisce RootDataReader')
             reader = RootDataReader(fname, branch=branch, identifier=identifier, label=self.labels,\
                     selected_branches=branches, exclude_branches=exclude_branches, \
                     nan=nan, chunk_size=chunk_size, nevts=self.evts, specs=specs, \
                     redirector=redirector, verbose=verbose)
+            
+            print('fuori da RootDataReader, il reader del file è stato creato e ora si costruisce lo specs file')
 
             # build specs for the whole set of root files
             self.global_specs(fname, reader)
@@ -280,7 +288,8 @@ class RootDataGenerator(object):
             else:
                 self.evts_toread[fname] = round((float(self.events[fname])/self.events['total']) * self.chunk_size)
         self.current_file = self.files[0]
-        print("init RootDataGenerator in {} sec\n\n".format(time.time()-time0))
+        print("init RootDataGenerator in {} sec\n".format(time.time()-time0))
+        print('esco da RootDataGenerator dopo aver dato il tempo che ha impiegato l inizializzazione')
 
 
     @property
@@ -327,12 +336,14 @@ class RootDataGenerator(object):
     def next_mix_files(self):
         '''Return next batch of events in form of data and mask vectors.
            Use it to equally mix events from different files'''
+           
         if self.finish_file == True:
             raise StopIteration
         time_start = time.time()
         data = []
         mask = []
         for fname in self.files:
+            print('Entra in gioco next_mix_files, ritorna il prossimo chunk di eventi. Lo fa per ogni file presente in files.txt')
             if fname == self.files[0]:
                 start = self.start_idx
             self.current_file = fname
@@ -363,7 +374,9 @@ class RootDataGenerator(object):
         data = np.array(data)
         mask = np.array(mask)
         if self.verbose:
+            print('E ci dice anche quanto tempo ci impiega a fare l operazione')
             print(f"\nTime for handling a chunk: {time.time()-time_start}\n\n")
+        print('ora si ritorna al models.py\n')
         return data, mask, labels
 
     def read_data_mix_files(self, start=0, stop=100):
@@ -406,6 +419,9 @@ class RootDataGenerator(object):
     def next_mix_classes(self):
         '''Return next batch of events in form of data and mask vectors.
            Use it to equally mix events with different labels'''
+           
+        print('next_ mix_classes metodo della classe RootDataGenerator, ritorna il prossimo batch di eventi')
+        
         data = []
         mask = []
 
@@ -552,3 +568,7 @@ class RootDataGenerator(object):
                     else:
                         self.nans[key] = (0-self.minv[key])/(self.maxv[key]-self.minv[key])
                 self.write_global_specs()
+                
+    print('Fuori da RootDataGenerator')
+    
+    print('FINE GENERATOR.PY')

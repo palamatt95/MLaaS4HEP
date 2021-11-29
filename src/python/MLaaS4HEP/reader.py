@@ -91,11 +91,14 @@ except ImportError:
     pyarrow = None
 
 # MLaaS4HEP modules
-from MLaaS4HEP.utils import nrows, dump_histograms, mem_usage, performance
-from MLaaS4HEP.utils import steps, fopen, file_type, load_code
+from utils import nrows, dump_histograms, mem_usage, performance
+from utils import steps, fopen, file_type, load_code
+
+print('Questo è il READER.PY')
 
 class OptionParser(object):
     "Option parser class for reader arguments"
+    print('OptionParser nel Reader.py')
     def __init__(self):
         "User based option parser"
         self.parser = argparse.ArgumentParser(prog='PROG')
@@ -139,6 +142,7 @@ class OptionParser(object):
             dest="hists", default=False, help="Create historgams for ROOT tree")
         self.parser.add_argument("--verbose", action="store", \
             dest="verbose", default=0, help="verbosity level")
+    print('fuori da OptionParser del Reader')
 
 def dim_jarr(arr):
     "Return dimention (max length) of jagged array"
@@ -165,6 +169,7 @@ class FileReader(object):
     """
     FileReader represents generic interface to read data files
     """
+    print('Interfaccia generica per la lettura dei file: class FileReader')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, verbose=0, reader=None):
         self.fin = fin
         self.label = label
@@ -213,6 +218,8 @@ class FileReader(object):
     def next(self):
         "Read next chunk of data from out file"
         return self.reader.next() if self.reader else []
+        
+    print('Fuori dal FileReader')
 
 #
 # HDFS readers
@@ -234,6 +241,7 @@ class HDFSReader(FileReader):
     """
     HDFSReader represents interface to read data file from HDFS.
     """
+    print('Entro in HDFSReader')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, verbose=0):
         if  sys.version.startswith('3.'):
             super().__init__(fin, label, chunk_size, nevts, preproc, verbose)
@@ -254,6 +262,7 @@ class HDFSReader(FileReader):
             if self.verbose:
                 print("read %s in %s sec" % (self.fin, time.time()-time0))
         return self.raw
+    print('Esco da HDFSReader')
 
 class HDFSJSONReader(HDFSReader):
     """
@@ -315,6 +324,7 @@ class HDFSCSVReader(HDFSReader):
     """
     HDFSCSVReader represents interface to read CSV file from HDFS storage
     """
+    print('dentro HDFSCSVReader')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, \
             verbose=0, headers=None, separator=','):
         if  sys.version.startswith('3.'):
@@ -362,11 +372,13 @@ class HDFSCSVReader(HDFSReader):
                 print("read data chunk", self.pos, time.time()-time0, \
                         self.chunk_size, np.shape(data))
             yield data, label
+    print('fuori HDFSCSVReader')
 
 class ParquetReader(HDFSReader):
     """
     ParquetReader represents interface to read Parque files
     """
+    print('Dentro ParquetReader')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, verbose=0):
         if  sys.version.startswith('3.'):
             super().__init__(fin, label, chunk_size, nevts, preproc, verbose)
@@ -391,6 +403,7 @@ class ParquetReader(HDFSReader):
             yield xdf.values, label
         else:
             yield xdf.values, self.label
+    print('fuori ParquetReader')
 
 #
 # Data reader classes
@@ -400,6 +413,7 @@ class JSONReader(FileReader):
     """
     JSONReader represents interface to read JSON file from local file system
     """
+    print('Dentro JSONReader -> interfaccia per leggere dei JSON da locale')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, verbose=0):
         if  sys.version.startswith('3.'):
             super().__init__(fin, label, chunk_size, nevts, preproc, verbose)
@@ -441,11 +455,13 @@ class JSONReader(FileReader):
                 data = [rec.get(k, 0) for k in self.keys]
                 label = self.label
             yield np.array(data), label
+    print('fuori dal JSONReader')
 
 class CSVReader(FileReader):
     """
     CSVReader represents interface to read CSV file from local file system
     """
+    print('dentro CSVReader -> sempre in locale')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, \
             verbose=0, headers=None, separator=','):
         if  sys.version.startswith('3.'):
@@ -485,6 +501,7 @@ class CSVReader(FileReader):
                 label = self.label
             self.nrows += 1
             yield np.array(data), label
+    print('fuori dal CSVReader')
 
 class AvroReader(FileReader):
     """
@@ -509,6 +526,7 @@ class JsonReader(FileReader):
     """
     JsonReader represents interface to read jSON file either from local file system or HDFS
     """
+    print('Qui invece abbiamo JsonReader -> legge sia file JSON locali che HDFS')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, verbose=0):
         if  fin.lower().startswith('hdfs://'):
             reader = HDFSJSONReader(fin, label, chunk_size, nevts, preproc)
@@ -520,12 +538,14 @@ class JsonReader(FileReader):
             super(JsonReader, self).__init__(\
                     fin, label, chunk_size, nevts, preproc, verbose, reader)
         self.nrows = reader.nrows
+    print('Fuori da JsonReader')
 
 
 class CsvReader(FileReader):
     """
     CsvReader represents interface to read CSV file either from local file system or HDFS
     """
+    print('Qui invece abbiamo CsvReader -> legge sia file CSV locali che HDFS')
     def __init__(self, fin, label, chunk_size=1000, nevts=-1, preproc=None, verbose=0):
         if  fin.lower().startswith('hdfs://'):
             reader = HDFSCSVReader(fin, label, chunk_size, nevts, preproc)
@@ -537,6 +557,7 @@ class CsvReader(FileReader):
             super(CsvReader, self).__init__(\
                     fin, label, chunk_size, nevts, preproc, verbose, reader)
         self.nrows = reader.nrows
+    print('fuori da CsvReader')
 
 
 class RootDataReader(object):
@@ -549,13 +570,16 @@ class RootDataReader(object):
     The second pass uses specs to convert jagged structure of
     ROOT file into flat DataFrame format.
     """
+    print('Dentro RootDataReader')
     def __init__(self, fin, branch='Events', selected_branches=None, \
             exclude_branches=None, identifier=None, label=None, \
             chunk_size=1000, nevts=-1, specs=None, nan=np.nan, histograms=False, \
             redirector='root://cms-xrd-global.cern.ch', verbose=0):
+        print('RootDataReader: classe che permette di leggere i root file')
         self.type = self.__class__.__name__
         self.fin = xfile(fin, redirector)
         self.verbose = verbose
+        print('lettura dei file trovati in files.txt')
         if self.verbose:
             print("Reading {}".format(self.fin))
         self.istream = uproot.open(self.fin)
@@ -598,8 +622,10 @@ class RootDataReader(object):
 
         # perform initialization
         time0 = time.time()
+        print('agisce init, che ci dice quali dati sono jagged o flat')
         self.init()
         if self.verbose:
+            print('Tempo di lettura del reader')
             print("{} init is complete in {} sec".format(self, time.time()-time0))
 
         if selected_branches:
@@ -616,6 +642,8 @@ class RootDataReader(object):
             if self.out_branches:
                 if self.verbose:
                     print("Select branches ...")
+                    #questo print non lo fa, la condizione del primo if non è soddisfatta -> non è presente selected branches?
+                    print('qui si printano tutti i branch')
                     for name in sorted(self.out_branches):
                         print(name)
         if exclude_branches:
@@ -635,6 +663,8 @@ class RootDataReader(object):
             if self.out_branches:
                 if self.verbose:
                     print("Select branches ...")
+                    #Questa invece me la prende, il secondo if parte, il primo no (nel mio caso)
+                    print('qui si printano tutti i branch')
                     for name in sorted(self.out_branches):
                         print(name)
 
@@ -738,6 +768,7 @@ class RootDataReader(object):
 
     def init(self):
         "Initialize class data members by scaning ROOT tree"
+        print('init: ci da il numero di eventi, la lunghezza dei jagged e dei flat e il numero di attributi')
         if self.minv and self.maxv:
             self.attrs = sorted(self.flat_keys()) + sorted(self.jagged_keys())
             self.shape = len(self.flat_keys()) + sum(self.jdim.values())
@@ -1099,6 +1130,7 @@ class RootDataReader(object):
                     self.minv.get(key, 'N/A'),
                     self.maxv.get(key, 'N/A'),
                     self.jdim.get(key, 'N/A')))
+    print('Fuori da RootDataReader')
 
 def object_size(data):
     "Return size of the data"
@@ -1229,6 +1261,8 @@ def main():
         reader.info()
     else:
         parse(reader, nevts, fout, hists)
+
+print('FINE READER.PY')
 
 if __name__ == '__main__':
     main()

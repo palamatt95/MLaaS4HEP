@@ -24,7 +24,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 # keras modules
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 
 # pytorch modules
 try:
@@ -33,8 +33,10 @@ except ImportError:
     torch = None
 
 # MLaaS4HEP modules
-from MLaaS4HEP.generator import RootDataGenerator, MetaDataGenerator, file_type
-from MLaaS4HEP.utils import load_code
+from generator import RootDataGenerator, MetaDataGenerator, file_type
+from utils import load_code
+
+print('Dentro a MODELS.PY')
 
 class Trainer(object):
     """
@@ -47,6 +49,7 @@ class Trainer(object):
         self.cls_model = '{}'.format(type(self.model)).lower()
         if self.verbose:
             try:
+                print('Qui facciamo il print della DNN')
                 print(self.model.summary())
             except AttributeError:
                 print(self.model)
@@ -59,6 +62,7 @@ class Trainer(object):
         :param y_train: the true values vector for input data.
         :param kwds: defines input set of parameters for end-user model.
         """
+        print('Agisce l unico API del trainer: fit')
         if self.verbose > 1:
             print("Perform fit on {} data with {}"\
                     .format(np.shape(x_train), kwds))
@@ -94,6 +98,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     :param specs: file specs
     :param fout: output file name to save the trained model
     """
+    print('dentro train_model\n')
     if not params:
         params = {}
     if not specs:
@@ -102,8 +107,13 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     if preproc:
         preproc = load_code(preproc, 'preprocessing')
     if file_type(files) == 'root':
+        print('I file sono .root, quindi si usa RootDataGenerator')
         gen = RootDataGenerator(files, labels, params, specs)
+        print('QUESTO è IL TIPO DI GEN: \n')
+        print(type(gen))
+        
     else:
+        print('I file non sono .root, si usa MetaDataGenerator')
         gen = MetaDataGenerator(files, labels, params, preproc, dtype)
     epochs = params.get('epochs', 10)
     batch_size = params.get('batch_size', 50)
@@ -114,6 +124,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
             'shuffle': shuffle}
 
     for data in gen:
+        print('dentro al ciclo for di train_model\n')
         time_ml = time.time()
         if np.shape(data[0])[0] == 0:
             print("received empty x_train chunk")
@@ -131,7 +142,9 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         print("y_train chunk of {} shape".format(np.shape(y_train)))
         if not trainer:
             idim = np.shape(x_train)[-1] # read number of attributes we have
+            print('ora agisce model()')
             model = model(idim)
+            print('printiamo il modello e la loss function utilizzata\n')
             print("model", model, "loss function", model.loss)
             trainer = Trainer(model, verbose=params.get('verbose', 0))
         # convert y_train to categorical array
@@ -140,6 +153,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         x_train = np.append(x_train,np.array(y_train).reshape(len(y_train),1),axis=1)
 
         #create the test set
+        print('creo il test set')
         train_val, test = train_test_split(x_train, stratify=y_train,test_size=0.2, random_state=21, shuffle=True)
         X_train_val = train_val[:,:-1]
         Y_train_val = train_val[:,-1:]
@@ -147,6 +161,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         Y_test = test[:,-1:]
         
         #create the validation set
+        print('creo il validation set')
         train, val = train_test_split(train_val, stratify=Y_train_val, test_size=0.2, random_state=21, shuffle=True)
         X_train=train[:,:-1]
         Y_train=train[:,-1:]
@@ -154,10 +169,19 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         Y_val=val[:,-1:]
 
         #fit the model
+        print('Ed infine faccio il fit del modello, fornendo anche le tempistiche (pre ml e training)\n')
         print(f"\n####Time pre ml: {time.time()-time_ml}")
         time0 = time.time()
         trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
         print(f"\n####Time for training: {time.time()-time0}\n\n")
+        
+        print('Qui ho fermato il ciclo al primo chunk di eventi, usando break')
+        break
     
     if fout and hasattr(trainer, 'save'):
         trainer.save(fout)
+        
+    print('Fuori da train model\n')
+        
+print('Fuori da MODELS.PY')
+        

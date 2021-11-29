@@ -50,6 +50,8 @@ try:
 except ImportError:
     hg = None
 
+print('Qui siamo nel UTILS.PY')
+
 def timestamp(msg='MLaaS4HEP'):
     "Return timestamp in pre-defined format"
     tst = time.localtime()
@@ -75,6 +77,7 @@ def load_code(mfile, fname):
         msg += "\nThe file should be available in PYTHONPATH"
         print(msg)
         raise
+    print('Entra in azione la load_code function, che carica il model.py')
 
 def nrows(filename):
     """
@@ -169,3 +172,5 @@ def file_type(fin):
         if fin.endswith(ext) or fin.endswith('%s.gz' % ext) or fin.endswith('%s.bz2' % ext):
             return ext
     return None
+    
+print('FINE UTILS.PY')

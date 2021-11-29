@@ -15,10 +15,12 @@ import json
 import argparse
 
 # MLaaS4HEP modules
-from MLaaS4HEP.models import train_model
+from models import train_model
 
+print('INIZIO WORKFLOW.PY')
 class OptionParser(object):
     "OptionParser class for workflow arguments"
+    print('Classe Option_Parser -> per il workflow')
     def __init__(self):
         "User based option parser"
         self.parser = argparse.ArgumentParser(prog='PROG')
@@ -48,10 +50,12 @@ class OptionParser(object):
 
 def main():
     "Main function"
+    print('inizia il main')
     optmgr = OptionParser()
     opts = optmgr.parser.parse_args()
     if opts.params and os.path.exists(opts.params):
         params = json.load(open(opts.params))
+        print('Il file dei parametri inserito è un json')
     else:
         params = {}
     specs = json.load(open(opts.specs)) if opts.specs else None
@@ -74,6 +78,7 @@ def main():
         labels = opts.labels # label name to look-up in data
 
     if opts.model:
+        print('ora si entra nel train_model')
         train_model(opts.model, files, labels, \
                 preproc=opts.preproc, params=params, specs=specs, \
                 fout=opts.fout, dtype=opts.dtype)
@@ -81,3 +86,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
+print('FINE WORKFLOW.PY')
