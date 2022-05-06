@@ -86,9 +86,9 @@ except ImportError:
     pyarrow = None
 
 # MLaaS4HEP modules
-from MLaaS4HEP.utils import nrows, dump_histograms, mem_usage, performance
-from MLaaS4HEP.utils import steps, fopen, file_type, load_code
-from MLaaS4HEP.utils import flat_handling, jagged_handling, new_branch_handling, gen_preproc, cutted_next
+from utils import nrows, dump_histograms, mem_usage, performance
+from utils import steps, fopen, file_type, load_code
+from utils import flat_handling, jagged_handling, new_branch_handling, gen_preproc, cutted_next
 
 class OptionParser(object):
     "Option parser class for reader arguments"
@@ -717,6 +717,8 @@ class RootDataReader(object):
             else:
                 if self.flat_cut:
                     self.flat_preproc = flat_handling(self.flat_cut)
+                else:
+                    print('No flat cut')
 
             if self.new_jagged_cut:
                 if self.jagged_cut:
@@ -727,6 +729,8 @@ class RootDataReader(object):
             else:
                 if self.jagged_cut:
                     self.jagged_all, self.jagged_any = jagged_handling(self.jagged_cut)
+                else:
+                    print('No jagged cut')
 
             self.to_remove = [self.to_remove[i][0] for i in range(len(self.to_remove)) if self.to_remove[i][1] == 'True']
 
@@ -982,7 +986,7 @@ class RootDataReader(object):
                     j_branch = self.fetch_data(key)
                     if (tot + len(j_branch))>=self.nevts:
                         dim = dim_jarr(j_branch[:(self.nevts-tot)])
-                        erwin = (tot + len(j_branch[:(self.nevts - tot)]))
+                        ciccio = (tot + len(j_branch[:(self.nevts - tot)]))
                     else:
                         dim = dim_jarr(j_branch)
                 else:
@@ -1003,17 +1007,19 @@ class RootDataReader(object):
                     if self.preproc:
                         if self.jkeys:
                             print("###events read for the specs file computation: %s events from %s chunks with size %s" \
-                                  % (erwin, len(self.time_reading_and_specs), self.chunk_size))
+                                  % (ciccio, len(self.time_reading_and_specs), self.chunk_size))
                             print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:]), 3)} sec")
+                            print(f"###reading + specs computing throughput: {round((self.chunk_size / sum(self.time_reading_and_specs[:])), 3)} evt/sec")
                             print(f"###total time elapsed for reading: {round(sum(self.time_reading[:]), 3)} sec")
                         else:
                             print(f"Number of chunks {len(self.time_reading_and_specs)}")
                             print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:]), 3)} sec")
+                            print(f"###reading + specs computing throughput: {round((self.chunk_size / sum(self.time_reading_and_specs[:])), 3)} evt/sec")
                             print(f"###total time elapsed for reading: {round(sum(self.time_reading[:]), 3)} sec")
-
                     else:
                         print(f"Number of chunks {len(self.time_reading_and_specs)}")
                         print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:]), 3)} sec")
+                        print(f"###reading + specs computing throughput: {round((self.chunk_size / sum(self.time_reading_and_specs[:])), 3)} evt/sec")
                         print(f"###total time elapsed for reading: {round(sum(self.time_reading[:]), 3)} sec")
                 break
 
@@ -1079,7 +1085,7 @@ class RootDataReader(object):
         if self.preproc:
             if (not self.chunk_idx % self.cutted_events):
                 if self.idx + self.chunk_size > self.nrows:
-                    nevts = self.nrows - self.counter_idx
+                    nevts = self.nrows - self.idx
                 else:
                     nevts = self.chunk_size
                 self.read_chunk(nevts)

@@ -22,8 +22,8 @@ except ImportError:
     pass
 
 # MLaaS4HEP modules
-from MLaaS4HEP.reader import RootDataReader, JsonReader, CsvReader, AvroReader, ParquetReader
-from MLaaS4HEP.utils import file_type, timestamp, global_cut, print_cut
+from reader import RootDataReader, JsonReader, CsvReader, AvroReader, ParquetReader
+from utils import file_type, timestamp, global_cut, print_cut
 
 
 class MetaDataGenerator(object):
@@ -385,6 +385,7 @@ class RootDataGenerator(object):
         mask = np.array(mask)
         if self.verbose:
             print(f"\nTime for handling a chunk: {time.time()-time_start}\n\n")
+            print(f"\nhandling a chunk throughput: {self.chunk_size / (time.time()-time_start)} evt/s\n")
         return data, mask, labels
 
     def read_data_mix_files(self, start=0, stop=100):
