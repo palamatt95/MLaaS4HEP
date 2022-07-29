@@ -20,6 +20,7 @@ import json
 # numpy modules
 import numpy as np
 import pickle
+import inspect
 
 #sklearn modules
 from sklearn.model_selection import train_test_split
@@ -158,6 +159,8 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         gen = RootDataGenerator(files, labels, params, preproc, specs)
     else:
         gen = MetaDataGenerator(files, labels, params, preproc, dtype)
+
+    torch_ = False
     epochs = params.get('epochs', 10)
     batch_size = params.get('batch_size', 50)
     shuffle = params.get('shuffle', True)
