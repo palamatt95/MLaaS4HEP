@@ -160,14 +160,32 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     else:
         gen = MetaDataGenerator(files, labels, params, preproc, dtype)
 
+    epochs = None
     torch_ = False
-    epochs = params.get('epochs', 10)
+
+    if 'epochs' in params:
+        epochs = params.get('epochs', 10)
     batch_size = params.get('batch_size', 50)
     shuffle = params.get('shuffle', True)
+    if 'metrics' in params:
+        if isinstance(params['metrics'], dict):
+            threshold = params['metrics']['threshold']
+            met = True
+        else:
+            if params['metrics'] == True:
+                met = True
+            else:
+                met = False
+
     split = params.get('split', 0.3)
     trainer = False
-    kwds = {'epochs':epochs, 'batch_size': batch_size,
-            'shuffle': shuffle}
+
+    if epochs:
+        kwds = {'epochs': epochs, 'batch_size': batch_size,
+                'shuffle': shuffle}
+    else:
+        kwds = {'batch_size': batch_size,'shuffle': shuffle}
+
 
     for data in gen:
         time_ml = time.time()
