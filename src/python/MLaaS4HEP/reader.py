@@ -717,8 +717,6 @@ class RootDataReader(object):
             else:
                 if self.flat_cut:
                     self.flat_preproc = flat_handling(self.flat_cut)
-                else:
-                    print('No flat cut')
 
             if self.new_jagged_cut:
                 if self.jagged_cut:
@@ -729,8 +727,6 @@ class RootDataReader(object):
             else:
                 if self.jagged_cut:
                     self.jagged_all, self.jagged_any = jagged_handling(self.jagged_cut)
-                else:
-                    print('No jagged cut')
 
             self.to_remove = [self.to_remove[i][0] for i in range(len(self.to_remove)) if self.to_remove[i][1] == 'True']
 
@@ -853,7 +849,7 @@ class RootDataReader(object):
             else:
                 self.branches = next(self.gen) # python 3.X and 2.X
         self.time_reading.append(time.time()-start_time)
-
+        print(self.branches.keys())
         end_time = time.time()
 
         if self.verbose:

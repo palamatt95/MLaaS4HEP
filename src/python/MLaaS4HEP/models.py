@@ -217,9 +217,10 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
             trainer = Trainer(model, verbose=params.get('verbose', 0))
 
         # convert y_train to categorical array
-        if model.loss == 'categorical_crossentropy':
-            y_train = to_categorical(y_train)
-        x_train = np.append(x_train,np.array(y_train).reshape(len(y_train),1),axis=1)
+        if hasattr(model, 'categorical_crossentropy'):
+            if model.loss == 'categorical_crossentropy':
+                y_train = to_categorical(y_train)
+        x_train = np.append(x_train, np.array(y_train).reshape(len(y_train), 1), axis=1)
 
         #create the test set
         train_val, test = train_test_split(x_train, stratify=y_train,test_size=0.2, random_state=21, shuffle=True)
