@@ -30,6 +30,7 @@ from tensorflow.keras.utils import to_categorical
 # pytorch modules
 try:
     import torch
+    import torch.nn as nn
 except ImportError:
     torch = None
 
@@ -65,10 +66,51 @@ class Trainer(object):
                     .format(np.shape(x_train), kwds))
         if self.cls_model.find('keras') != -1:
             self.model.fit(x_train, y_train, verbose=self.verbose, **kwds)
+            if hasattr(self.model, 'log_loss'):
+                loss = self.model.metrics.log_loss(y_train, self.model.predict_proba(x_train)[:,1])
+                print("Log Loss Function: {}".format(loss))
+
         elif self.cls_model.find('torch') != -1:
-            self.model(x_train).data.numpy()
+            if hasattr(self.model, 'train_clf'):
+                self.model.train_clf(model=self.model, train_loader=x_train, val_loader=y_train)
+            else:
+                self.torch_train(self.model, train_loader=x_train, val_loader=y_train, **kwds)
+
+        elif self.cls_model.find('xgboost') != -1:
+            print('##### Fitting the model #####')
+            self.model.fit(x_train, y_train)
+
+        elif self.cls_model.find('sklearn') != -1:
+            print('##### Fitting the model #####')
+            if hasattr(self.model, 'partial_fit'):
+                self.model.partial_fit(x_train, y_train.ravel(), np.unique(y_train))
+            else:
+                self.model.fit(x_train, y_train.ravel())
         else:
             raise NotImplementedError
+
+    def torch_train(self, model, train_loader, val_loader, **kwds):
+        """Default train function for PyTorch models"""
+        epochs = kwds['epochs']
+        loss_func = nn.BCELoss()
+        optim = torch.optim.Adam(model.parameters(), lr=1e-3)
+        self.model.train()
+        for epoch in range(1, epochs+1):
+            mean_train_loss = 0.0
+            for i, (xs, ys) in enumerate(train_loader):
+                optim.zero_grad() # reset gradients
+                outputs = model(xs)
+                train_loss = loss_func(outputs, ys)
+                train_loss.backward() # gradient back propagation
+                optim.step()
+                mean_train_loss = (mean_train_loss * i + float(train_loss)) / (i + 1)
+
+            mean_val_loss = 0.0
+            for i, (xs, ys) in enumerate(val_loader):
+                outputs = model(xs)
+                val_loss = loss_func(outputs, ys)
+                mean_val_loss = (mean_val_loss * i + float(val_loss)) / (i + 1)
+            print('Epoch {}\nMean train/validation loss: {:.4f}/{:.4f}'.format(epoch, mean_train_loss, mean_val_loss))
 
     def predict(self):
         "Predict API of the trainer"
