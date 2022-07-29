@@ -146,6 +146,12 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     if not specs:
         specs = {}
     model = load_code(model, 'model')
+
+    if len(inspect.getfullargspec(model).args) > 0:
+        scikit_xg = False
+    else:
+        scikit_xg = True
+
     if preproc:
         preproc = json.load(open(preproc))
     if file_type(files) == 'root':
@@ -179,10 +185,16 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         if len(data) == 3:
             print("x_mask chunk of {} shape".format(np.shape(x_mask)))
         if not trainer:
-            idim = np.shape(x_train)[-1] # read number of attributes we have
-            model = model(idim)
-            #print("model", model, "loss function", model.loss)
+            if not scikit_xg:
+                idim = np.shape(x_train)[-1] # read number of attributes we have
+                model = model(idim) #PyTorch or Keras
+                if str(type(model)).lower().find('torch') != -1:
+                    torch_ = True
+            else:
+                model = model()
+
             trainer = Trainer(model, verbose=params.get('verbose', 0))
+
         # convert y_train to categorical array
         if model.loss == 'categorical_crossentropy':
             y_train = to_categorical(y_train)
@@ -206,7 +218,22 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         #print(f"\n####Time pre ml: {time.time()-time_ml}")
         print('\n')
         time0 = time.time()
-        trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
+
+        #training the model using train classifier
+        if torch_:
+            train_tensor = torch.utils.data.TensorDataset(torch.tensor(X_train).float(), torch.tensor(Y_train, dtype=torch.float))
+            test_tensor  = torch.utils.data.TensorDataset(torch.tensor(X_test).float(),torch.tensor(Y_test, dtype=torch.float))
+            eval_tensor  = torch.utils.data.TensorDataset(torch.tensor(X_val).float(),torch.tensor(Y_val, dtype=torch.float))
+            train_loader = torch.utils.data.DataLoader(train_tensor, batch_size=batch_size, shuffle=True)
+            val_loader = torch.utils.data.DataLoader(eval_tensor, batch_size=batch_size, shuffle=False)
+            test_loader = torch.utils.data.DataLoader(test_tensor, batch_size=batch_size, shuffle=False)
+
+            #trainer.fit(train_loader, test_loader)
+            trainer.fit(train_loader, val_loader, **kwds)
+
+        else:
+            trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
+
         print(f"\n####Time for training: {time.time()-time0}\n")
 
     if fout and hasattr(trainer, 'save'):
