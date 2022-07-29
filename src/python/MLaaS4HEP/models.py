@@ -19,6 +19,7 @@ import time
 import json
 # numpy modules
 import numpy as np
+import pickle
 
 #sklearn modules
 from sklearn.model_selection import train_test_split
@@ -76,9 +77,13 @@ class Trainer(object):
     def save(self, fout):
         "Save our model to given file"
         if self.cls_model.find('keras') != -1:
-            self.model.save(fout)
+            self.model.save(fout) #format .h5
         elif self.cls_model.find('torch') != -1 and torch:
-            torch.save(self.model, fout)
+            torch.save(self.model.state_dict(), fout) #format .pth
+        elif self.cls_model.find('xgboost') != -1:
+            self.model.save_model(fout) #format .json
+        elif self.cls_model.find('sklearn') != -1:
+            pickle.dump(self.model, open(fout, 'wb')) #format .pkl
         else:
             raise NotImplementedError
 
