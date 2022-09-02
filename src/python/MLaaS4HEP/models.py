@@ -24,6 +24,8 @@ import inspect
 
 #sklearn modules
 from sklearn.model_selection import train_test_split
+from sklearn import metrics
+import matplotlib.pyplot as plt
 
 # keras modules
 from tensorflow.keras.utils import to_categorical
@@ -36,8 +38,8 @@ except ImportError:
     torch = None
 
 # MLaaS4HEP modules
-from MLaaS4HEP.generator import RootDataGenerator, MetaDataGenerator, file_type
-from MLaaS4HEP.utils import load_code
+from generator import RootDataGenerator, MetaDataGenerator, file_type
+from utils import load_code
 
 class Trainer(object):
     """
@@ -113,9 +115,19 @@ class Trainer(object):
                 mean_val_loss = (mean_val_loss * i + float(val_loss)) / (i + 1)
             print('Epoch {}\nMean train/validation loss: {:.4f}/{:.4f}'.format(epoch, mean_train_loss, mean_val_loss))
 
-    def predict(self):
+    def predict(self, x_test):
         "Predict API of the trainer"
-        raise NotImplementedError
+        if self.cls_model.find('keras') != -1:
+            pred = self.model.predict(x_test)
+        elif (self.cls_model.find('sklearn') != -1 or self.cls_model.find('xgboost') != -1):
+            pred = self.model.predict_proba(x_test.values)[:,1]
+        elif self.cls_model.find('torch') != -1:
+            self.model.eval()
+            pred = self.model(x_test)
+            pred = pred.detach().numpy()
+        else:
+            raise NotImplementedError
+        return pred
 
     def save(self, fout):
         "Save our model to given file"
@@ -256,7 +268,24 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         else:
             trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
 
-        print(f"\n####Time for training: {time.time()-time0}\n")
+    d = trainer.predict(X_test)
+    fpr, tpr, thresholds = metrics.roc_curve(Y_test, d)
+    # calculate the g-mean for each threshold
+    gmeans = np.sqrt(tpr * (1-fpr))
+    # locate the index of the largest g-mean
+    ix = np.argmax(gmeans)
+    print('Best Threshold=%f, G-Mean=%.3f' % (thresholds[ix], gmeans[ix]))
+    plt.plot([0,1], [0,1], linestyle='--', label='No Skill')
+    plt.plot(fpr, tpr, marker='.', label='XGB')
+    plt.scatter(fpr[ix], tpr[ix], marker='o', color='black', label='Best')
+    # axis labels
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend()
+    # show the plot
+    plt.show()
+
+    print(f"\n####Time for training: {time.time()-time0}\n")
 
     if fout and hasattr(trainer, 'save'):
         trainer.save(fout)
