@@ -268,22 +268,13 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         else:
             trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
 
-    d = trainer.predict(X_test)
-    fpr, tpr, thresholds = metrics.roc_curve(Y_test, d)
-    # calculate the g-mean for each threshold
-    gmeans = np.sqrt(tpr * (1-fpr))
-    # locate the index of the largest g-mean
-    ix = np.argmax(gmeans)
-    print('Best Threshold=%f, G-Mean=%.3f' % (thresholds[ix], gmeans[ix]))
-    plt.plot([0,1], [0,1], linestyle='--', label='No Skill')
-    plt.plot(fpr, tpr, marker='.', label='XGB')
-    plt.scatter(fpr[ix], tpr[ix], marker='o', color='black', label='Best')
-    # axis labels
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.legend()
-    # show the plot
-    plt.show()
+        d = trainer.predict(X_test)
+        fpr, tpr, thresholds = metrics.roc_curve(Y_test, d)
+        # calculate the g-mean for each threshold
+        gmeans = np.sqrt(tpr * (1-fpr))
+        # locate the index of the largest g-mean
+        ix = np.argmax(gmeans)
+        print('Best Threshold=%f, G-Mean=%.3f' % (thresholds[ix], gmeans[ix]))
 
     print(f"\n####Time for training: {time.time()-time0}\n")
 
