@@ -202,10 +202,14 @@ class Trainer(object):
         print("Confusion Matrix:\n\n{}\n".format(conf_matrix_val))
         print("Classification Report:\n\n{}".format(metrics.classification_report(val_target, predict_val)))
 
-    def predict(self, x_test):
+    def predict(self, x_test, y_test):
         "Predict API of the trainer"
         if self.cls_model.find('keras') != -1:
             pred = self.model.predict(x_test)
+            baseline_results = self.model.evaluate(x_test, y_test, verbose=0)
+            print('\n')
+            for name, value in zip(self.model.metrics_names, baseline_results):
+                print(name, 'test: ', value)
         elif (self.cls_model.find('sklearn') != -1 or self.cls_model.find('xgboost') != -1):
             pred = self.model.predict_proba(x_test.values)[:,1]
         elif self.cls_model.find('torch') != -1:
@@ -241,6 +245,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     :param specs: file specs
     :param fout: output file name to save the trained model
     """
+    met = False
     if not params:
         params = {}
     if not specs:
@@ -266,6 +271,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         epochs = params.get('epochs', 10)
     batch_size = params.get('batch_size', 50)
     shuffle = params.get('shuffle', True)
+
     if 'metrics' in params:
         if isinstance(params['metrics'], dict):
             threshold = params['metrics']['threshold']
@@ -355,7 +361,11 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
         else:
             trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
 
-        d = trainer.predict(X_test)
+        if met:
+            trainer.perform_metrics(X_train, Y_train, X_val, Y_val, threshold)
+
+        d = trainer.predict(X_test, Y_test)
+
         fpr, tpr, thresholds = metrics.roc_curve(Y_test, d)
         # calculate the g-mean for each threshold
         gmeans = np.sqrt(tpr * (1-fpr))
