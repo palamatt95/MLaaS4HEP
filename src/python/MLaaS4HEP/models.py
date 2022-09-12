@@ -211,7 +211,7 @@ class Trainer(object):
             for name, value in zip(self.model.metrics_names, baseline_results):
                 print(name, 'test: ', value)
         elif (self.cls_model.find('sklearn') != -1 or self.cls_model.find('xgboost') != -1):
-            pred = self.model.predict_proba(x_test.values)[:,1]
+            pred = self.model.predict_proba(x_test)[:,1]
         elif self.cls_model.find('torch') != -1:
             self.model.eval()
             pred = self.model(x_test)
@@ -246,6 +246,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     :param fout: output file name to save the trained model
     """
     met = False
+    threshold = 0
     if not params:
         params = {}
     if not specs:
