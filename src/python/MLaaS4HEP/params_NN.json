@@ -2,6 +2,7 @@
     "nevts": -1,
     "shuffle": true,
     "chunk_size": 50000,
+    "epochs": 3,
     "batch_size": 1000,
     "identifier": "",
     "branch": "myTree",
