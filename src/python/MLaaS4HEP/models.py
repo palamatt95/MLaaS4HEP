@@ -366,7 +366,6 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
             trainer.perform_metrics(X_train, Y_train, X_val, Y_val, threshold)
 
         d = trainer.predict(X_test, Y_test)
-
         fpr, tpr, thresholds = metrics.roc_curve(Y_test, d)
         # calculate the g-mean for each threshold
         gmeans = np.sqrt(tpr * (1-fpr))
