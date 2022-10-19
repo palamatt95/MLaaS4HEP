@@ -817,7 +817,7 @@ class RootDataReader(object):
                             del self.branches[elem]
                         except:
                             print('Branch {} not found in the branches of the tree.'.format(elem))
-                #print(self.cutted_events)
+                print(self.cutted_events)
 
             else:
                 self.branches = next(self.gen) # python 3.X and 2.X
@@ -839,6 +839,7 @@ class RootDataReader(object):
             if self.preproc:
                 self.branches, self.cutted_events = cutted_next(self.gen, self.flat_preproc, self.jagged, self.jagged_all, \
                                                                 self.jagged_any, self.new_branch, self.new_jagged_cut)
+                print(self.cutted_events)
 
                 if self.to_remove:
                     for elem in self.to_remove:
@@ -849,7 +850,6 @@ class RootDataReader(object):
             else:
                 self.branches = next(self.gen) # python 3.X and 2.X
         self.time_reading.append(time.time()-start_time)
-        print(self.branches.keys())
         end_time = time.time()
 
         if self.verbose:
@@ -1079,6 +1079,7 @@ class RootDataReader(object):
 
         # read new chunk of records if necessary
         if self.preproc:
+            #print(self.cutted_events)
             if (not self.chunk_idx % self.cutted_events):
                 if self.idx + self.chunk_size > self.nrows:
                     nevts = self.nrows - self.idx

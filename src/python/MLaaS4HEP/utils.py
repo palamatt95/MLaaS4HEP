@@ -433,6 +433,9 @@ def if_jagged_cut(batch, jagged_all, jagged_any):
         cutted_batch = batch[eval(jagged_any[0])]
         cutted_evts = len(cutted_batch)
 
+    #if cutted_evts == 0:
+    #    cutted_evts
+
     return cutted_batch, cutted_evts
 
 def global_cut(tree, flat, flat_preproc, jagged, jagged_all, jagged_any, new_branch, new_flat_cut, new_jagged_cut, aliases_string, total_key, reader):
