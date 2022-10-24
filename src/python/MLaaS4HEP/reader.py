@@ -1005,18 +1005,24 @@ class RootDataReader(object):
                             print("###events read for the specs file computation: %s events from %s chunks with size %s" \
                                   % (ciccio, len(self.time_reading_and_specs), self.chunk_size))
                             print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:]), 3)} sec")
-                            print(f"###reading + specs computing throughput: {round((self.chunk_size / sum(self.time_reading_and_specs[:])), 3)} evt/sec")
                             print(f"###total time elapsed for reading: {round(sum(self.time_reading[:]), 3)} sec")
+                            if self.nevts == self.nrows:
+                                print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:-1]), 3)}; number of chunks {len(self.time_reading_and_specs)-1}")
+                                print(f"###total time elapsed for reading: {round(sum(self.time_reading[:-1]), 3)}; number of chunks {len(self.time_reading)-1}\n")
                         else:
                             print(f"Number of chunks {len(self.time_reading_and_specs)}")
                             print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:]), 3)} sec")
-                            print(f"###reading + specs computing throughput: {round((self.chunk_size / sum(self.time_reading_and_specs[:])), 3)} evt/sec")
                             print(f"###total time elapsed for reading: {round(sum(self.time_reading[:]), 3)} sec")
+                            if self.nevts == self.nrows:
+                                print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:-1]), 3)}; number of chunks {len(self.time_reading_and_specs)-1}")
+                                print(f"###total time elapsed for reading: {round(sum(self.time_reading[:-1]), 3)}; number of chunks {len(self.time_reading)-1}\n")
                     else:
                         print(f"Number of chunks {len(self.time_reading_and_specs)}")
                         print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:]), 3)} sec")
-                        print(f"###reading + specs computing throughput: {round((self.chunk_size / sum(self.time_reading_and_specs[:])), 3)} evt/sec")
                         print(f"###total time elapsed for reading: {round(sum(self.time_reading[:]), 3)} sec")
+                        if self.nevts == self.nrows:
+                            print(f"###total time elapsed for reading + specs computing: {round(sum(self.time_reading_and_specs[:-1]), 3)}; number of chunks {len(self.time_reading_and_specs)-1}")
+                            print(f"###total time elapsed for reading: {round(sum(self.time_reading[:-1]), 3)}; number of chunks {len(self.time_reading)-1}\n")
                 break
 
         # if we've been asked to read all or zero events we determine
