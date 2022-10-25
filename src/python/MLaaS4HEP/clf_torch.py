@@ -37,7 +37,7 @@ class ClassifierNN(nn.Module):
 
     def train_clf(self, model, train_loader, val_loader):
         grace = 0
-        max_epochs=1
+        max_epochs=10
         min_gain=0.01
         grace_limit=4
         learning_rate=0.002
