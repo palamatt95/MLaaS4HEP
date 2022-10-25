@@ -271,16 +271,96 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     split = params.get('split', 0.3)
     trainer = False
 
-    if epochs:
-        kwds = {'epochs': epochs, 'batch_size': batch_size,
-                'shuffle': shuffle}
-    else:
-        kwds = {'batch_size': batch_size,'shuffle': shuffle}
-
     if preproc:
         preproc = json.load(open(preproc))
 
-    if not train:
+    if train and epochs:
+        kwds = {'batch_size': batch_size,'shuffle': shuffle}
+        for i in range(epochs):
+            if file_type(files) == 'root':
+                gen = RootDataGenerator(files, labels, params, preproc, specs)
+            else:
+                gen = MetaDataGenerator(files, labels, params, preproc, dtype)
+
+            for data in gen:
+                time_ml = time.time()
+                if np.shape(data[0])[0] == 0:
+                    print("received empty x_train chunk")
+                    break
+                if len(data) == 2:
+                    x_train = data[0]
+                    y_train = data[1]
+                elif len(data) == 3: # ROOT data with mask array
+                    x_train = data[0]
+                    x_mask = data[1]
+                    x_train[np.isnan(x_train)] = 0 # convert all nan's to zero
+                    y_train = data[2]
+
+                print("x_train chunk of {} shape".format(np.shape(x_train)))
+                print("y_train chunk of {} shape".format(np.shape(y_train)))
+                if len(data) == 3:
+                    print("x_mask chunk of {} shape".format(np.shape(x_mask)))
+                if not trainer:
+                    if not scikit_xg:
+                        idim = np.shape(x_train)[-1] # read number of attributes we have
+                        model = model(idim) #PyTorch or Keras
+                        if str(type(model)).lower().find('torch') != -1:
+                            torch_ = True
+                    else:
+                        model = model()
+
+                    trainer = Trainer(model, verbose=params.get('verbose', 0))
+
+                # convert y_train to categorical array
+                if hasattr(model, 'categorical_crossentropy'):
+                    if model.loss == 'categorical_crossentropy':
+                        y_train = to_categorical(y_train)
+                x_train = np.append(x_train, np.array(y_train).reshape(len(y_train), 1), axis=1)
+
+                #create the test set
+                train_val, test = train_test_split(x_train, stratify=y_train,test_size=0.2, random_state=21, shuffle=True)
+                X_train_val = train_val[:,:-1]
+                Y_train_val = train_val[:,-1:]
+                X_test = test[:,:-1]
+                Y_test = test[:,-1:]
+
+                #create the validation set
+                train, val = train_test_split(train_val, stratify=Y_train_val, test_size=0.2, random_state=21, shuffle=True)
+                X_train=train[:,:-1]
+                Y_train=train[:,-1:]
+                X_val=val[:,:-1]
+                Y_val=val[:,-1:]
+
+                #fit the model
+                #print(f"\n####Time pre ml: {time.time()-time_ml}")
+                print('\n')
+                time0 = time.time()
+
+                #training the model using train classifier
+                if torch_:
+                    train_tensor = torch.utils.data.TensorDataset(torch.tensor(X_train).float(), torch.tensor(Y_train, dtype=torch.float))
+                    test_tensor  = torch.utils.data.TensorDataset(torch.tensor(X_test).float(),torch.tensor(Y_test, dtype=torch.float))
+                    eval_tensor  = torch.utils.data.TensorDataset(torch.tensor(X_val).float(),torch.tensor(Y_val, dtype=torch.float))
+                    train_loader = torch.utils.data.DataLoader(train_tensor, batch_size=batch_size, shuffle=True)
+                    val_loader = torch.utils.data.DataLoader(eval_tensor, batch_size=batch_size, shuffle=False)
+                    test_loader = torch.utils.data.DataLoader(test_tensor, batch_size=batch_size, shuffle=False)
+
+                    trainer.fit(train_loader, val_loader, **kwds)
+
+                else:
+                    trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
+
+                if met:
+                    trainer.perform_metrics(X_train, Y_train, X_val, Y_val, threshold)
+
+                print(f"\n####Time for training: {time.time()-time0}\n")
+
+    else:
+        if epochs:
+            kwds = {'epochs': epochs, 'batch_size': batch_size,
+                    'shuffle': shuffle}
+        else:
+            kwds = {'batch_size': batch_size,'shuffle': shuffle}
 
         if file_type(files) == 'root':
             gen = RootDataGenerator(files, labels, params, preproc, specs)
@@ -350,7 +430,6 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
                 val_loader = torch.utils.data.DataLoader(eval_tensor, batch_size=batch_size, shuffle=False)
                 test_loader = torch.utils.data.DataLoader(test_tensor, batch_size=batch_size, shuffle=False)
 
-                #trainer.fit(train_loader, test_loader)
                 trainer.fit(train_loader, val_loader, **kwds)
 
             else:
@@ -360,6 +439,7 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
                 trainer.perform_metrics(X_train, Y_train, X_val, Y_val, threshold)
 
             print(f"\n####Time for training: {time.time()-time0}\n")
+
 
     if fout and hasattr(trainer, 'save'):
         trainer.save(fout)

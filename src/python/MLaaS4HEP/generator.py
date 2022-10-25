@@ -384,8 +384,7 @@ class RootDataGenerator(object):
         data = np.array(data)
         mask = np.array(mask)
         if self.verbose:
-            print(f"\nTime for handling a chunk: {time.time()-time_start}\n\n")
-            print(f"\nhandling a chunk throughput: {self.chunk_size / (time.time()-time_start)} evt/s\n")
+            print(f"\nTime for handling a chunk: {time.time()-time_start}\n")
         return data, mask, labels
 
     def read_data_mix_files(self, start=0, stop=100):
