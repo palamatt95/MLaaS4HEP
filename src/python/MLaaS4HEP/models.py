@@ -24,6 +24,8 @@ import inspect
 
 #sklearn modules
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
 
 # keras modules
 from tensorflow.keras.utils import to_categorical
@@ -337,6 +339,9 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
 
         else:
             trainer.fit(X_train, Y_train, **kwds, validation_data=(X_val,Y_val))
+
+        if met:
+            trainer.perform_metrics(X_train, Y_train, X_val, Y_val, threshold)
 
         print(f"\n####Time for training: {time.time()-time0}\n")
 
