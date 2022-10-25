@@ -113,6 +113,89 @@ class Trainer(object):
                 mean_val_loss = (mean_val_loss * i + float(val_loss)) / (i + 1)
             print('Epoch {}\nMean train/validation loss: {:.4f}/{:.4f}'.format(epoch, mean_train_loss, mean_val_loss))
 
+    def perform_metrics(self, x_train, y_train, x_val, y_val, thresh):
+        print('\n')
+        if thresh == 0:
+            thresh = 0.15
+        #threshold as argument when calling function
+        opt = False
+        if self.cls_model.find('torch') != -1:
+            #PyTorch
+            otp = True
+            x_train = torch.tensor(x_train).float()
+            y_train = torch.tensor(y_train, dtype=torch.float)
+            x_val = torch.tensor(x_val).float()
+            y_val = torch.tensor(y_val, dtype=torch.float)
+
+            self.model.eval()
+
+            threshold = torch.Tensor([thresh])
+
+            train_output = self.model(x_train)
+            train_target = y_train
+            predict_train = (train_output>threshold).float()*1
+
+            val_output = self.model(x_val)
+            val_target = y_val
+            predict_val = (val_output>threshold).float()*1
+
+            train_output = train_output.detach().numpy()
+            train_target = train_target.detach().numpy()
+            val_output = val_output.detach().numpy()
+            val_target = val_target.detach().numpy()
+
+        elif self.cls_model.find('sklearn') != -1:
+            #scikit
+            train_target = y_train
+            val_target = y_val
+
+            if hasattr(self.model, 'predict_proba'):
+                otp = True
+                train_output = self.model.predict_proba(x_train)[:,1]
+                val_output = self.model.predict_proba(x_val)[:,1]
+
+            predict_train = self.model.predict(x_train)
+            predict_val = self.model.predict(x_val)
+
+        elif self.cls_model.find('keras') != -1:
+            #Keras
+            otp = True
+            train_target = y_train
+            val_target = y_val
+
+            train_output = self.model.predict(x_train)
+            val_output = self.model.predict(x_val)
+
+            predict_train = (train_output > thresh)
+            predict_val = (val_output > thresh)
+
+        else:
+            raise NotImplementedError
+
+
+        print("########################")
+        print("Metrics on training set")
+        print("########################\n")
+        # adding this condition since, in scikit, it is not always possible to calculate roc_auc
+        if otp:
+            auc_train = metrics.roc_auc_score(train_target, train_output)
+            print("AUC: {}\n".format(auc_train))
+
+        conf_matrix_train = metrics.confusion_matrix(train_target, predict_train)
+
+        print("Confusion Matrix:\n\n{}\n".format(conf_matrix_train))
+        print("Classification Report:\n\n{}".format(metrics.classification_report(train_target, predict_train)))
+
+        print("########################")
+        print("Metrics on validation set")
+        print("########################\n")
+        if otp:
+            auc_val = metrics.roc_auc_score(val_target, val_output)
+            print("AUC validation: {}\n".format(auc_val))
+        conf_matrix_val = metrics.confusion_matrix(val_target, predict_val)
+        print("Confusion Matrix:\n\n{}\n".format(conf_matrix_val))
+        print("Classification Report:\n\n{}".format(metrics.classification_report(val_target, predict_val)))
+
     def predict(self):
         "Predict API of the trainer"
         raise NotImplementedError
