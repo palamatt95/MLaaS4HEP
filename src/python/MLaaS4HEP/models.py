@@ -69,6 +69,10 @@ class Trainer(object):
                     .format(np.shape(x_train), kwds))
         if self.cls_model.find('keras') != -1:
             self.model.fit(x_train, y_train, verbose=self.verbose, **kwds)
+            baseline_results = self.model.evaluate(x_train, y_train, verbose=0)
+            print('\n')
+            for name, value in zip(self.model.metrics_names, baseline_results):
+                print(name, 'train: ', value)
             if hasattr(self.model, 'log_loss'):
                 loss = self.model.metrics.log_loss(y_train, self.model.predict_proba(x_train)[:,1])
                 print("Log Loss Function: {}".format(loss))
