@@ -36,8 +36,8 @@ except ImportError:
     torch = None
 
 # MLaaS4HEP modules
-from MLaaS4HEP.generator import RootDataGenerator, MetaDataGenerator, file_type
-from MLaaS4HEP.utils import load_code
+from generator import RootDataGenerator, MetaDataGenerator, file_type
+from utils import load_code
 
 class Trainer(object):
     """
@@ -153,13 +153,6 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     else:
         scikit_xg = True
 
-    if preproc:
-        preproc = json.load(open(preproc))
-    if file_type(files) == 'root':
-        gen = RootDataGenerator(files, labels, params, preproc, specs)
-    else:
-        gen = MetaDataGenerator(files, labels, params, preproc, dtype)
-
     epochs = None
     torch_ = False
 
@@ -186,6 +179,12 @@ def train_model(model, files, labels, preproc=None, params=None, specs=None, fou
     else:
         kwds = {'batch_size': batch_size,'shuffle': shuffle}
 
+    if preproc:
+        preproc = json.load(open(preproc))
+    if file_type(files) == 'root':
+        gen = RootDataGenerator(files, labels, params, preproc, specs)
+    else:
+        gen = MetaDataGenerator(files, labels, params, preproc, dtype)
 
     for data in gen:
         time_ml = time.time()
