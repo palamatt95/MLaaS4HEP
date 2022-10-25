@@ -81,7 +81,6 @@ def main():
                 preproc=opts.preproc, params=params, specs=specs, \
                 fout=opts.fout, dtype=opts.dtype)
         print("Final_time: {}".format(time.time() - t_0))
-        print("Final throughput: {}".format(500000 / (time.time()-t_0)))
         return
 
 if __name__ == '__main__':
