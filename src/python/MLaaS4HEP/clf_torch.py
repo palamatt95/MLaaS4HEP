@@ -5,29 +5,7 @@ import os.path
 from datetime import datetime
 
 class ClassifierNN(nn.Module):
-    """
-    Provide a neural network model for classification.
 
-    Provide a neural network (NN) model for classification.  The NN is a
-    simple, fully connected feed-forward network.  The layout of the NN is
-    specified at construction time by providing a tuple.  The length of the
-    tuple corresponds to the number of network layers (including input and
-    output layers).  Each tuple entry specifies the number of nodes in the
-    corresponding layer.  The width of the input and output layer must
-    correspond to the number of input variables and classes, respectively.
-
-    The non-linear activation function for the hidden layers is relu.  The
-    output activation is linear during training and sigmoid in inference mode.
-    We use nn.BCELoss() as the loss function during training, as usual for
-    binary classifiers.
-
-    The recommended optimizer is Adam.
-
-    In case you move the classifier to an accelerator (such as a GPU) make sure
-    you construct the optimizer after.  Of course, different optimizers and
-    loss functions can be used; make sure the implications are understood, in
-    particular for the output layer activation (see above).
-    """
     def __init__(self, idim,
                  activation=fun.relu):
         super().__init__()
@@ -47,10 +25,6 @@ class ClassifierNN(nn.Module):
             x = self.activation(layer(x))
 
         x = torch.sigmoid(self.layers[-1](x))
-        #if self.inference_mode:
-        #    x = torch.sigmoid(self.layers[-1](x))
-        #else:
-        #    x = self.layers[-1](x)
         return x
 
     def train(self, mode=True):
@@ -61,27 +35,9 @@ class ClassifierNN(nn.Module):
         super(ClassifierNN, self).eval()
         self.inference_mode = True
 
-    def save_weights(self, tag=None, time_stamp=True, directory=None):
-        weight_file_path = 'classifier_weights_'
-        if tag is not None:
-            weight_file_path += '{}_'.format(tag)
-        for width in self.layout[:-1]:
-            weight_file_path += '{}x'.format(width)
-        weight_file_path += '{}'.format(self.layout[-1])
-        if time_stamp:
-            weight_file_path += '_{}'.format(datetime.now().strftime('%Y%m%d%H%M%S'))
-        weight_file_path += '.pt'
-        if directory is not None:
-            weight_file_path = os.path.join(directory, weight_file_path)
-
-        torch.save(self.state_dict(), weight_file_path)
-        self.last_save = weight_file_path
-
-        return weight_file_path
-
     def train_clf(self, model, train_loader, val_loader):
         grace = 0
-        max_epochs=10
+        max_epochs=1
         min_gain=0.01
         grace_limit=4
         learning_rate=0.002
@@ -130,13 +86,10 @@ class ClassifierNN(nn.Module):
                     grace = 0
                     print('Survived grace period.')
                 best_loss = mean_test_loss
-                weight_path = model.save_weights(tag=weight_file_tag, time_stamp=False, directory=save_dir)
-                print("Saved network parameters to '{}'.".format(weight_path))
         else:
             print('Maximum number of epochs ({}) reached. Training terminated.'.format(max_epochs))
 
-        return train_history, test_history, weight_path
-
+        return train_history, test_history
 
 def model(idim):
     """Simple pyTorch model for testing purpose"""
