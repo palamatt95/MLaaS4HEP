@@ -94,7 +94,11 @@ class Trainer(object):
 
     def torch_train(self, model, train_loader, val_loader, **kwds):
         """Default train function for PyTorch models"""
-        epochs = kwds['epochs']
+
+        if 'epochs' in kwds:
+            epochs = kwds['epochs']
+        else:
+            epochs = 1
         loss_func = nn.BCELoss()
         optim = torch.optim.Adam(model.parameters(), lr=1e-3)
         self.model.train()
