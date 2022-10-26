@@ -11,7 +11,7 @@ class ClassifierNN(nn.Module):
         super().__init__()
 
         self.last_save = None
-        self.layout = (idim, 1024, 512, 256, 1)
+        self.layout = (idim, 256, 128, 1)
         self.inference_mode = False  # training clients: change this attribute to False
         self.activation = activation
         self.layers = nn.ModuleList()
