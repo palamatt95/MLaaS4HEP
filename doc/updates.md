@@ -3,26 +3,26 @@
 The MLaaS4HEP code has been updated to support new features making it more flexible for the user to train new Machine Learning (ML) and Deep Learning (DL) models.
 Specifically, these new updates have made it possible to:
 
-- generalize MLaaS4HEP to new frameworks,
-- compute performance metrics,
+- generalize MLaaS4HEP to other ML frameworks,
+- compute ML performance metrics,
 - improve the MLaaS4HEP training method.
 
-### Generalization to new frameworks and libraries
+### Generalization to other ML frameworks and libraries
 
 MLaaS4HEP has already been tested using a Sequential NN  written in Keras. However, among its main objectives, MLaaS4HEP aims to be ML  framework agnostic, which means the user can decide to use any ML framework and algorithm, and, in order to get closer to this goal, some changes have been made in order to support other frameworks and libraries.
-In particular, PyTorch, Scikit-Learn and XGBoost were correctly integrated within the MLaaS4HEP code. 
+In particular, PyTorch, Scikit-Learn and XGBoost were correctly integrated within the MLaaS4HEP code.
 
 In the following we will show how to define ML/DL models using the frameworks mentioned above.
 
-The ML/DL model definition must be done on an external python file.
-First, within the python file you need to import the libraries needed to define
-the model. Once this is done, you move on to the model definition. 
-However, it is necessary for the model definition to occur within a function 
+The ML/DL model definition must be done in an external python file.
+Firstly, within the python file the user needs to import the libraries needed to define
+the model. Once this is done, the user moves on to the model definition.
+However, it is necessary for the model definition to occur within a function
 called `model` which, depending on the kind of model, may take an argument.
 
-Indeed, if the defined model is a Neural Network, the function should have `idim` 
-as argument, which is used to specify the input shape required to define 
-the Neural Network. However, if the model is not a Neural Network, 
+Indeed, if the defined model is a Neural Network, the function should have `idim`
+as argument, which is used to specify the input shape required to define
+the Neural Network. However, if the model is not a Neural Network,
 the function `model` has no arguments.
 Finally, once the model is defined, the function needs to return the classifier.
 
@@ -174,15 +174,15 @@ An example of `params.json` is shown below.
 However, the given example shows some parameters that need to be changed
 depending on the model used: `epochs` and `chunk_size`.
 The presence of these parameters assumes that the defined model is capable of incremental learning and that it `knows` the concept of epoch.
-A `params.json` defined in this way is therefore suitable if the model under consideration is a Neural Network. 
-However, if the defined model does not satisfy the two previous 
-conditions (as in the case of a Decision Tree, for example) 
-it is necessary to remove the `epochs` key and change the value 
-associated with the `chunk_size` key by setting it to -1: 
-in this way, the training of the model will be carried out using 
+A `params.json` defined in this way is therefore suitable if the model under consideration is a Neural Network.
+However, if the defined model does not satisfy the two previous
+conditions
+it is necessary to remove the `epochs` key and change the value
+associated with the `chunk_size` key by setting it to -1:
+in this way, the training of the model will be carried out using
 a single chunk containing all events.
 
-Thus, the previous example is suitable for examples 1. and 2., 
+Thus, the previous example is suitable for examples 1. and 2.,
 whereas if a model is defined as in examples 3. and 4., the params.json file will need to be modified as follows.
 
 ```
@@ -197,7 +197,7 @@ whereas if a model is defined as in examples 3. and 4., the params.json file wil
 
 ### Supporting performance Metrics
 
-Since metrics are used to quantify the learning abilities of the models, it may be useful 
+Since metrics are used to quantify the learning abilities of the models, it may be useful
 using MLaaS4HEP to have a general overview of the most common metrics. To provide
 such information, the new method called `performance_metric has been defined in the
 code, regardless of the used ML framework. In particular, it was decided to provide the
@@ -211,15 +211,15 @@ The performance metrics function prints the values related to the previous metri
 both on the training and on the validation set for each chunk and has been implemented
 in such a way that it is the user who decides whether to execute this function or not: if
 the user is interested in obtaining the scores of these metrics, it is necessary to specify this
-request in the `params.json file`, by inserting the key `metrics`. 
+request in the `params.json file`, by inserting the key `metrics`.
 
 Moreover, an additional
-parameter, was included within this key to obtain these scores: 
+parameter, was included within this key to obtain these scores:
 the threshold.
-In case the threshold is not defined, 
+In case the threshold is not defined,
 it will be set to the default value (0.5).
 
-In the below example, two cases are provided: one in which the threshold 
+In the below example, two cases are provided: one in which the threshold
 is not defined and one in which it is defined instead.
 
 ```
@@ -234,12 +234,12 @@ is not defined and one in which it is defined instead.
 
 ### Improvements on the training method
 
-The current MLaaS4HEP training procedure, when a NN model is chosen, is performed  chunk by chunk where each chunk is used to train the model for *n* epochs, with *n* defined  by the user. 
+The current MLaaS4HEP training procedure, when a NN model is chosen, is performed  chunk by chunk where each chunk is used to train the model for *n* epochs, with *n* defined  by the user.
 It has been introduced an additional training procedure, the standard one,  where each epoch is performed using all the chunks.  Then the training continues for *n* times.
 
 Now it is possible to select the training method you want to apply, and to do so you need to insert a new key within the params.json file.
 The new key to be entered is called `training` and depending on the value associated with it, training will be carried out with either the original or the standard method.
-In case the user decides to apply the newly introduced method, he/she needs to associate the new key with the value `standar`.
+In case the user decides to apply the newly introduced method, he/she needs to associate the new key with the value `standard`.
 If the value associated with the key is different or the key is not present, the original training mode will be carried out.
 
 Below is an example of the params.json file also containing this new key.
