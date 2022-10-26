@@ -126,7 +126,7 @@ class Trainer(object):
     def perform_metrics(self, x_train, y_train, x_val, y_val, thresh):
         print('\n')
         if thresh == 0:
-            thresh = 0.15
+            thresh = 0.5
         #threshold as argument when calling function
         opt = False
         if self.cls_model.find('torch') != -1:
