@@ -24,7 +24,6 @@ import inspect
 
 #sklearn modules
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
 # keras modules
@@ -38,8 +37,8 @@ except ImportError:
     torch = None
 
 # MLaaS4HEP modules
-from generator import RootDataGenerator, MetaDataGenerator, file_type
-from utils import load_code
+from MLaaS4HEP.generator import RootDataGenerator, MetaDataGenerator, file_type
+from MLaaS4HEP.utils import load_code
 
 class Trainer(object):
     """
